@@ -35,14 +35,9 @@ const app = express();
 // Parse ALLOWED_ORIGINS from environment variable
 const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [];
 
-// CORS configuration
+// Enhanced CORS configuration
 const corsOptions = {
   origin: (origin, callback) => {
-    // Allow all origins if ALLOWED_ORIGINS is set to *
-    if (process.env.ALLOWED_ORIGINS === '*') {
-      return callback(null, true);
-    }
-    
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
@@ -78,7 +73,6 @@ const corsOptions = {
 
 // Apply CORS middleware
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
 
 // Body parsing middleware
 app.use(express.json());
@@ -101,12 +95,22 @@ app.use('/api/staff', staffRoutes);
 app.use(errorHandler);
 
 // 404 handler
-app.use('*', (req, res) => {
+app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
 
 app.listen(PORT, HOST, () => {
   console.log(`Car Rental API Server running on ${HOST}:${PORT}`);
