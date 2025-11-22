@@ -1,25 +1,16 @@
 const express = require('express');
 const router = express.Router();
+const authController = require('../controllers/authController');
+const { authenticate } = require('../middleware/authMiddleware');
+const { validateRegistration, validateLogin } = require('../middleware/validationMiddleware');
 
-// Placeholder routes - will be implemented in Module 2
-router.post('/register', (req, res) => {
-  res.json({ message: 'Auth register endpoint - coming soon' });
-});
+// Public routes
+router.post('/register', validateRegistration, authController.register);
+router.post('/login', validateLogin, authController.login);
+router.post('/logout', authController.logout);
 
-router.post('/login', (req, res) => {
-  res.json({ message: 'Auth login endpoint - coming soon' });
-});
-
-router.post('/logout', (req, res) => {
-  res.json({ message: 'Auth logout endpoint - coming soon' });
-});
-
-router.get('/me', (req, res) => {
-  res.json({ message: 'Get current user endpoint - coming soon' });
-});
-
-router.put('/profile', (req, res) => {
-  res.json({ message: 'Update profile endpoint - coming soon' });
-});
+// Protected routes
+router.get('/me', authenticate, authController.getProfile);
+router.put('/profile', authenticate, authController.updateProfile);
 
 module.exports = router;

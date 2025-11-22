@@ -99,8 +99,8 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-const PORT = process.env.PORT || 3000;
-const HOST = process.env.HOST || '0.0.0.0';
+const PORT = process.env.PORT || 8000;
+const HOST = process.env.HOST || 'localhost';
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (err) => {
