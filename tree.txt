@@ -1,0 +1,35 @@
+backend/
+├── src/
+│   ├── controllers/
+│   │   ├── authController.js
+│   │   ├── carController.js
+│   │   ├── bookingController.js
+│   │   ├── paymentController.js
+│   │   ├── adminController.js
+│   │   └── staffController.js
+│   ├── routes/
+│   │   ├── authRoutes.js
+│   │   ├── carRoutes.js
+│   │   ├── bookingRoutes.js
+│   │   ├── paymentRoutes.js
+│   │   ├── adminRoutes.js
+│   │   └── staffRoutes.js
+│   ├── middleware/
+│   │   ├── authMiddleware.js
+│   │   ├── roleMiddleware.js
+│   │   └── validationMiddleware.js
+│   ├── services/
+│   │   ├── authService.js
+│   │   ├── carService.js
+│   │   ├── bookingService.js
+│   │   ├── paymentService.js
+│   │   └── emailService.js
+│   ├── utils/
+│   │   ├── database.js
+│   │   ├── constants.js
+│   │   ├── helpers.js
+│   │   └── validation.js
+│   └── app.js
+├── tests/
+├── package.json
+└── .env

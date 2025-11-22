@@ -1,0 +1,43 @@
+Authentication Routes
+POST  /api/auth/register          - Customer registration
+POST  /api/auth/login             - User login
+POST  /api/auth/logout            - User logout
+GET   /api/auth/me                - Get current user profile
+PUT   /api/auth/profile           - Update user profile
+
+Car Routes
+GET   /api/cars                   - Get all cars (with search/filters)
+GET   /api/cars/:id               - Get single car details
+GET   /api/cars/availability      - Check car availability for dates
+POST  /api/cars                   - Admin: Add new car
+PUT   /api/cars/:id               - Admin/Staff: Update car details
+DELETE /api/cars/:id              - Admin: Delete car
+
+Booking Routes
+GET   /api/bookings               - User: Get their bookings
+GET   /api/bookings/:id           - Get booking details
+POST  /api/bookings               - Create new booking
+PUT   /api/bookings/:id/cancel    - Cancel booking
+GET   /api/bookings/all           - Staff/Admin: Get all bookings
+PUT   /api/bookings/:id/status    - Staff/Admin: Update booking status
+
+Payment Routes
+POST  /api/payments/deposit       - Pay booking deposit
+POST  /api/payments/rental        - Pay rental amount
+POST  /api/payments/refund        - Process refund
+GET   /api/payments/:bookingId    - Get payment history for booking
+
+Staff Routes
+GET   /api/staff/dashboard        - Staff dashboard data
+PUT   /api/staff/bookings/:id/collect    - Mark car as collected
+PUT   /api/staff/bookings/:id/return     - Process car return
+POST  /api/staff/refunds          - Create refund request
+GET   /api/staff/refunds          - Get refund requests
+
+Admin Routes
+GET   /api/admin/dashboard        - Admin dashboard stats
+GET   /api/admin/users            - Get all users
+PUT   /api/admin/users/:id/role   - Update user role
+PUT   /api/admin/users/:id/status - Suspend/activate user
+GET   /api/admin/reports          - Generate reports
+PUT   /api/admin/refunds/:id      - Approve/reject refund
