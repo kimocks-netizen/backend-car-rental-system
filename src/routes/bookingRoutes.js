@@ -1,29 +1,24 @@
 const express = require('express');
+const bookingController = require('../controllers/bookingController');
+const { authenticate } = require('../middleware/authMiddleware');
+const { requireRole } = require('../middleware/roleMiddleware');
+
 const router = express.Router();
 
-// Placeholder routes - will be implemented in Module 4
-router.get('/', (req, res) => {
-  res.json({ message: 'Get user bookings endpoint - coming soon' });
-});
+// All booking routes require authentication
+router.use(authenticate);
 
-router.get('/:id', (req, res) => {
-  res.json({ message: 'Get booking details endpoint - coming soon' });
-});
+// Customer routes
+router.get('/my-bookings', bookingController.getMyBookings);
+router.post('/', bookingController.createBooking);
+router.get('/:id', bookingController.getBookingById);
+router.patch('/:id/cancel', bookingController.cancelBooking);
 
-router.post('/', (req, res) => {
-  res.json({ message: 'Create new booking endpoint - coming soon' });
-});
+// All users can get bookings (customers get their own, staff/admin get all)
+router.get('/', bookingController.getAllBookings);
 
-router.put('/:id/cancel', (req, res) => {
-  res.json({ message: 'Cancel booking endpoint - coming soon' });
-});
-
-router.get('/all', (req, res) => {
-  res.json({ message: 'Get all bookings (staff/admin) endpoint - coming soon' });
-});
-
-router.put('/:id/status', (req, res) => {
-  res.json({ message: 'Update booking status endpoint - coming soon' });
-});
+// Staff/Admin routes
+router.patch('/:id/status', requireRole(['admin', 'staff']), bookingController.updateBookingStatus);
+router.patch('/:id/return', requireRole(['admin', 'staff']), bookingController.returnCar);
 
 module.exports = router;

@@ -9,11 +9,16 @@
     "build": "echo 'Build completed - no compilation needed for Node.js'",
     "test": "jest"
   },
-  "keywords": ["car-rental", "backend", "api"],
+  "keywords": [
+    "car-rental",
+    "backend",
+    "api"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@supabase/supabase-js": "^2.52.0",
+    "axios": "^1.13.2",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",

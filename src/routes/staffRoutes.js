@@ -1,25 +1,18 @@
 const express = require('express');
+const staffController = require('../controllers/staffController');
+const { authenticate } = require('../middleware/authMiddleware');
+const { requireRole } = require('../middleware/roleMiddleware');
+
 const router = express.Router();
 
-// Placeholder routes - will be implemented in Module 5
-router.get('/dashboard', (req, res) => {
-  res.json({ message: 'Staff dashboard data endpoint - coming soon' });
-});
+// All staff routes require staff or admin role
+router.use(authenticate, requireRole(['staff', 'admin']));
 
-router.put('/bookings/:id/collect', (req, res) => {
-  res.json({ message: 'Mark car as collected endpoint - coming soon' });
-});
-
-router.put('/bookings/:id/return', (req, res) => {
-  res.json({ message: 'Process car return endpoint - coming soon' });
-});
-
-router.post('/refunds', (req, res) => {
-  res.json({ message: 'Create refund request endpoint - coming soon' });
-});
-
-router.get('/refunds', (req, res) => {
-  res.json({ message: 'Get refund requests endpoint - coming soon' });
-});
+// Staff dashboard and operations
+router.get('/dashboard', staffController.getDashboard);
+router.put('/bookings/:id/collect', staffController.markCarCollected);
+router.put('/bookings/:id/return', staffController.processCarReturn);
+router.post('/refunds', staffController.createRefundRequest);
+router.get('/refunds', staffController.getRefundRequests);
 
 module.exports = router;

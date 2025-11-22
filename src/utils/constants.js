@@ -1,19 +1,16 @@
-// User roles
-exports.USER_ROLES = {
+const USER_ROLES = {
   ADMIN: 'admin',
   STAFF: 'staff',
   CUSTOMER: 'customer'
 };
 
-// User status
-exports.USER_STATUS = {
+const USER_STATUS = {
   ACTIVE: 'active',
   SUSPENDED: 'suspended',
-  PENDING: 'pending'
+  INACTIVE: 'inactive'
 };
 
-// Booking status
-exports.BOOKING_STATUS = {
+const BOOKING_STATUS = {
   PENDING: 'pending',
   CONFIRMED: 'confirmed',
   ACTIVE: 'active',
@@ -21,50 +18,52 @@ exports.BOOKING_STATUS = {
   CANCELLED: 'cancelled'
 };
 
-// Car status
-exports.CAR_STATUS = {
+const CAR_STATUS = {
   AVAILABLE: 'available',
-  RENTED: 'rented',
-  MAINTENANCE: 'maintenance',
-  UNAVAILABLE: 'unavailable'
+  UNAVAILABLE: 'unavailable',
+  MAINTENANCE: 'maintenance'
 };
 
-// Payment status
-exports.PAYMENT_STATUS = {
-  PENDING: 'pending',
-  COMPLETED: 'completed',
-  FAILED: 'failed',
-  REFUNDED: 'refunded'
-};
-
-// Payment types
-exports.PAYMENT_TYPES = {
+const PAYMENT_TYPES = {
   DEPOSIT: 'deposit',
   RENTAL: 'rental',
   REFUND: 'refund'
 };
 
-// Car categories
-exports.CAR_CATEGORIES = {
-  ECONOMY: 'economy',
-  COMPACT: 'compact',
-  MIDSIZE: 'midsize',
-  FULLSIZE: 'fullsize',
-  LUXURY: 'luxury',
-  SUV: 'suv',
-  CONVERTIBLE: 'convertible'
+const PAYMENT_STATUS = {
+  PENDING: 'pending',
+  COMPLETED: 'completed',
+  FAILED: 'failed'
 };
 
-// Fuel types
-exports.FUEL_TYPES = {
+const CAR_TYPES = {
+  SEDAN: 'sedan',
+  SUV: 'suv',
+  HATCHBACK: 'hatchback',
+  LUXURY: 'luxury',
+  VAN: 'van'
+};
+
+const FUEL_TYPES = {
   PETROL: 'petrol',
   DIESEL: 'diesel',
-  HYBRID: 'hybrid',
-  ELECTRIC: 'electric'
+  ELECTRIC: 'electric',
+  HYBRID: 'hybrid'
 };
 
-// Transmission types
-exports.TRANSMISSION_TYPES = {
+const TRANSMISSION_TYPES = {
   MANUAL: 'manual',
   AUTOMATIC: 'automatic'
+};
+
+module.exports = {
+  USER_ROLES,
+  USER_STATUS,
+  BOOKING_STATUS,
+  CAR_STATUS,
+  PAYMENT_TYPES,
+  PAYMENT_STATUS,
+  CAR_TYPES,
+  FUEL_TYPES,
+  TRANSMISSION_TYPES
 };

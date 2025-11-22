@@ -1,0 +1,187 @@
+const { supabase } = require('../utils/database');
+
+const carService = {
+  async getAllCars({ page = 1, limit = 10, type, fuel_type, availability_status }) {
+    const offset = (page - 1) * limit;
+    
+    let query = supabase.from('cars').select('*', { count: 'exact' });
+    
+    if (type) {
+      query = query.eq('type', type);
+    }
+    
+    if (fuel_type) {
+      query = query.eq('fuel_type', fuel_type);
+    }
+    
+    if (availability_status) {
+      query = query.eq('availability_status', availability_status);
+    }
+    
+    const { data: cars, error, count } = await query
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+    
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return {
+      cars: cars || [],
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total: count || 0,
+        pages: Math.ceil((count || 0) / limit)
+      }
+    };
+  },
+
+  async getCarById(id) {
+    const { data, error } = await supabase
+      .from('cars')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error) {
+      return null;
+    }
+    
+    return data;
+  },
+
+  async createCar(carData) {
+    const {
+      brand, model, type, year, daily_rate, fuel_type,
+      transmission, capacity, mileage, image_url, description, created_by
+    } = carData;
+
+    const { data, error } = await supabase
+      .from('cars')
+      .insert({
+        brand, model, type, year, daily_rate, fuel_type,
+        transmission, capacity, mileage, image_url, description, created_by
+      })
+      .select('*')
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data;
+  },
+
+  async updateCar(id, carData) {
+    const {
+      brand, model, type, year, daily_rate, fuel_type,
+      transmission, capacity, mileage, image_url, description
+    } = carData;
+
+    const { data, error } = await supabase
+      .from('cars')
+      .update({
+        brand, model, type, year, daily_rate, fuel_type,
+        transmission, capacity, mileage, image_url, description,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select('*')
+      .single();
+
+    if (error) {
+      return null;
+    }
+
+    return data;
+  },
+
+  async deleteCar(id) {
+    const { error } = await supabase
+      .from('cars')
+      .delete()
+      .eq('id', id);
+    
+    return !error;
+  },
+
+  async updateCarStatus(id, availability_status) {
+    const { data, error } = await supabase
+      .from('cars')
+      .update({
+        availability_status,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select('*')
+      .single();
+    
+    if (error) {
+      return null;
+    }
+    
+    return data;
+  },
+
+  async searchCars({ q, type, fuel_type, min_rate, max_rate }) {
+    let query = supabase
+      .from('cars')
+      .select('*')
+      .eq('availability_status', 'available');
+
+    if (q) {
+      query = query.or(`brand.ilike.%${q}%,model.ilike.%${q}%`);
+    }
+
+    if (type) {
+      query = query.eq('type', type);
+    }
+
+    if (fuel_type) {
+      query = query.eq('fuel_type', fuel_type);
+    }
+
+    if (min_rate) {
+      query = query.gte('daily_rate', min_rate);
+    }
+
+    if (max_rate) {
+      query = query.lte('daily_rate', max_rate);
+    }
+
+    const { data, error } = await query.order('daily_rate', { ascending: true });
+    
+    if (error) {
+      throw new Error(error.message);
+    }
+    
+    return data || [];
+  },
+
+  async checkAvailability(carId, startDate, endDate) {
+    // Check if car exists and is available
+    const { data: car } = await supabase
+      .from('cars')
+      .select('availability_status')
+      .eq('id', carId)
+      .single();
+    
+    if (!car || car.availability_status !== 'available') {
+      return false;
+    }
+    
+    // Check for conflicting bookings
+    const { data: conflicts } = await supabase
+      .from('bookings')
+      .select('id')
+      .eq('car_id', carId)
+      .not('status', 'in', '(cancelled,completed)')
+      .lte('start_date', endDate)
+      .gte('end_date', startDate);
+    
+    return !conflicts || conflicts.length === 0;
+  }
+};
+
+module.exports = carService;

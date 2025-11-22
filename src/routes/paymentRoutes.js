@@ -1,21 +1,18 @@
 const express = require('express');
+const paymentController = require('../controllers/paymentController');
+const { authenticate } = require('../middleware/authMiddleware');
+const { requireRole } = require('../middleware/roleMiddleware');
+
 const router = express.Router();
 
-// Placeholder routes - will be implemented in Module 4
-router.post('/deposit', (req, res) => {
-  res.json({ message: 'Pay booking deposit endpoint - coming soon' });
-});
+// All payment routes require authentication
+router.use(authenticate);
 
-router.post('/rental', (req, res) => {
-  res.json({ message: 'Pay rental amount endpoint - coming soon' });
-});
-
-router.post('/refund', (req, res) => {
-  res.json({ message: 'Process refund endpoint - coming soon' });
-});
-
-router.get('/:bookingId', (req, res) => {
-  res.json({ message: 'Get payment history endpoint - coming soon' });
-});
+// Payment routes
+router.post('/deposit', paymentController.payDeposit);
+router.post('/rental', paymentController.payRental);
+router.post('/refund', requireRole(['admin', 'staff']), paymentController.processRefund);
+router.patch('/:id/status', requireRole(['admin', 'staff']), paymentController.updatePaymentStatus);
+router.get('/:bookingId', paymentController.getPaymentHistory);
 
 module.exports = router;

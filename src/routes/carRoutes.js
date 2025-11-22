@@ -1,29 +1,20 @@
 const express = require('express');
+const carController = require('../controllers/carController');
+const { authenticate } = require('../middleware/authMiddleware');
+const { requireRole } = require('../middleware/roleMiddleware');
+
 const router = express.Router();
 
-// Placeholder routes - will be implemented in Module 3
-router.get('/', (req, res) => {
-  res.json({ message: 'Get all cars endpoint - coming soon' });
-});
+// Public routes
+router.get('/', carController.getAllCars);
+router.get('/search', carController.searchCars);
+router.get('/availability', carController.checkAvailability);
+router.get('/:id', carController.getCarById);
 
-router.get('/:id', (req, res) => {
-  res.json({ message: 'Get single car endpoint - coming soon' });
-});
-
-router.get('/availability', (req, res) => {
-  res.json({ message: 'Check car availability endpoint - coming soon' });
-});
-
-router.post('/', (req, res) => {
-  res.json({ message: 'Add new car endpoint - coming soon' });
-});
-
-router.put('/:id', (req, res) => {
-  res.json({ message: 'Update car endpoint - coming soon' });
-});
-
-router.delete('/:id', (req, res) => {
-  res.json({ message: 'Delete car endpoint - coming soon' });
-});
+// Protected routes - Admin/Staff only
+router.post('/', authenticate, requireRole(['admin', 'staff']), carController.createCar);
+router.put('/:id', authenticate, requireRole(['admin', 'staff']), carController.updateCar);
+router.delete('/:id', authenticate, requireRole(['admin']), carController.deleteCar);
+router.patch('/:id/status', authenticate, requireRole(['admin', 'staff']), carController.updateCarStatus);
 
 module.exports = router;
