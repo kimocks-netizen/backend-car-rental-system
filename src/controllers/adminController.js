@@ -152,41 +152,58 @@ const adminController = {
 
   async generateReports(req, res) {
     try {
-      const { type, start_date, end_date } = req.query;
+      // Get recent bookings
+      const { data: recentBookings } = await supabase
+        .from('bookings')
+        .select('id, status, total_amount, created_at')
+        .order('created_at', { ascending: false })
+        .limit(10);
       
-      let query, params;
+      // Get monthly revenue
+      const { data: payments } = await supabase
+        .from('payments')
+        .select('amount, created_at')
+        .in('payment_type', ['deposit', 'rental'])
+        .eq('status', 'completed')
+        .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString());
       
-      switch (type) {
-        case 'revenue':
-          query = `
-            SELECT DATE(created_at) as date, SUM(amount) as revenue
-            FROM payments 
-            WHERE payment_type IN ('deposit', 'rental') 
-            AND status = 'completed'
-            AND created_at BETWEEN $1 AND $2
-            GROUP BY DATE(created_at)
-            ORDER BY date
-          `;
-          params = [start_date, end_date];
-          break;
-          
-        case 'bookings':
-          query = `
-            SELECT DATE(created_at) as date, COUNT(*) as bookings, status
-            FROM bookings
-            WHERE created_at BETWEEN $1 AND $2
-            GROUP BY DATE(created_at), status
-            ORDER BY date
-          `;
-          params = [start_date, end_date];
-          break;
-          
-        default:
-          return res.status(400).json({ success: false, message: 'Invalid report type' });
-      }
+      const monthlyRevenue = payments?.reduce((sum, payment) => sum + payment.amount, 0) || 0;
       
-      const result = await pool.query(query, params);
-      res.json({ success: true, data: result.rows });
+      // Get stats
+      const { count: totalUsers } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true });
+      
+      const { count: totalCars } = await supabase
+        .from('cars')
+        .select('*', { count: 'exact', head: true });
+      
+      const { count: activeBookings } = await supabase
+        .from('bookings')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'active');
+      
+      const { data: allPayments } = await supabase
+        .from('payments')
+        .select('amount')
+        .in('payment_type', ['deposit', 'rental'])
+        .eq('status', 'completed');
+      
+      const totalRevenue = allPayments?.reduce((sum, payment) => sum + payment.amount, 0) || 0;
+      
+      res.json({
+        success: true,
+        data: {
+          stats: {
+            totalUsers: totalUsers || 0,
+            totalCars: totalCars || 0,
+            activeBookings: activeBookings || 0,
+            totalRevenue: totalRevenue
+          },
+          recentBookings: recentBookings || [],
+          monthlyRevenue
+        }
+      });
     } catch (error) {
       res.status(500).json({ success: false, message: error.message });
     }
