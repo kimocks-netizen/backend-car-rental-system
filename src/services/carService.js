@@ -54,7 +54,8 @@ const carService = {
   async createCar(carData) {
     const {
       brand, model, type, year, daily_rate, fuel_type,
-      transmission, capacity, mileage, description, created_by, image_url
+      transmission, capacity, mileage, description, created_by, image_url,
+      total_quantity, available_quantity
     } = carData;
 
     console.log('Creating car with image_url:', image_url);
@@ -65,7 +66,9 @@ const carService = {
         brand, model, type, year, daily_rate, fuel_type,
         transmission, capacity, mileage, 
         image_url: image_url || null,
-        description, created_by
+        description, created_by,
+        total_quantity: total_quantity || 1,
+        available_quantity: available_quantity || 1
       })
       .select('*')
       .single();
@@ -189,17 +192,42 @@ const carService = {
   },
 
   async getAvailableCars() {
-    const { data, error } = await supabase
+    // Get all cars
+    const { data: cars, error: carsError } = await supabase
       .from('cars')
       .select('*')
-      .eq('availability_status', 'available')
       .order('daily_rate', { ascending: true });
     
-    if (error) {
-      throw new Error(error.message);
+    if (carsError) {
+      throw new Error(carsError.message);
     }
     
-    return data || [];
+    // Get active bookings
+    const { data: bookings, error: bookingsError } = await supabase
+      .from('bookings')
+      .select('car_id')
+      .in('status', ['pending', 'confirmed', 'active']);
+    
+    if (bookingsError) {
+      throw new Error(bookingsError.message);
+    }
+    
+    // Calculate availability for each car
+    const carsWithAvailability = cars.map(car => {
+      const carBookings = bookings.filter(booking => booking.car_id === car.id);
+      const totalQuantity = car.total_quantity || 1;
+      const bookedCount = carBookings.length;
+      const availableQuantity = Math.max(0, totalQuantity - bookedCount);
+      
+      return {
+        ...car,
+        available_quantity: availableQuantity,
+        total_quantity: totalQuantity
+      };
+    });
+    
+    // Return all cars (including sold out ones for display)
+    return carsWithAvailability;
   }
 };
 
