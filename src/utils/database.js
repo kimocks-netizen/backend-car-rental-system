@@ -23,12 +23,35 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, {
 
 // Storage helper functions
 const uploadCarImage = async (fileBuffer, fileName, bucket = 'car-images') => {
-  const { data, error } = await supabase.storage
-    .from(bucket)
-    .upload(fileName, fileBuffer);
+  try {
+    // Check if bucket exists, create if it doesn't
+    const { data: buckets } = await supabase.storage.listBuckets();
+    const bucketExists = buckets?.some(b => b.name === bucket);
+    
+    if (!bucketExists) {
+      const { error: createError } = await supabase.storage.createBucket(bucket, {
+        public: true,
+        allowedMimeTypes: ['image/*'],
+        fileSizeLimit: 5242880 // 5MB
+      });
+      if (createError) {
+        console.warn('Bucket creation failed, but continuing:', createError.message);
+      }
+    }
 
-  if (error) throw error;
-  return data;
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .upload(fileName, fileBuffer, {
+        contentType: 'image/*',
+        upsert: false
+      });
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Upload error:', error);
+    throw error;
+  }
 };
 
 const getPublicUrl = (fileName, bucket = 'car-images') => {

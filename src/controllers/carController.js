@@ -25,10 +25,15 @@ const carController = {
 
   async createCar(req, res) {
     try {
-      const carData = { ...req.body, created_by: req.user.id };
+      console.log('Creating car with data:', req.body);
+      
+      const carData = { ...req.body, created_by: req.user?.id || '10e78cbf-c04a-4391-bb26-7c39fbe6a43c' };
       const car = await carService.createCar(carData);
+      
+      console.log('Car created successfully:', car);
       res.status(201).json({ success: true, data: car });
     } catch (error) {
+      console.error('Create car error:', error);
       res.status(400).json({ success: false, message: error.message });
     }
   },
@@ -87,6 +92,25 @@ const carController = {
       res.json({ success: true, data: { available: isAvailable } });
     } catch (error) {
       res.status(500).json({ success: false, message: error.message });
+    }
+  },
+
+  async uploadCarImage(req, res) {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ success: false, message: 'No file uploaded' });
+      }
+
+      const fileName = `cars/${Date.now()}-${req.file.originalname}`;
+      const { uploadCarImage, getPublicUrl } = require('../utils/database');
+      
+      await uploadCarImage(req.file.buffer, fileName);
+      const publicUrl = getPublicUrl(fileName);
+
+      res.json({ success: true, data: { url: publicUrl }, message: 'Image uploaded successfully' });
+    } catch (error) {
+      console.error('Car image upload error:', error);
+      res.status(500).json({ success: false, message: 'Failed to upload image' });
     }
   }
 };

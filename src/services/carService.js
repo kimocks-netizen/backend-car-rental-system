@@ -1,4 +1,4 @@
-const { supabase } = require('../utils/database');
+const { supabase, uploadCarImage, getPublicUrl } = require('../utils/database');
 
 const carService = {
   async getAllCars({ page = 1, limit = 10, type, fuel_type, availability_status }) {
@@ -54,19 +54,24 @@ const carService = {
   async createCar(carData) {
     const {
       brand, model, type, year, daily_rate, fuel_type,
-      transmission, capacity, mileage, image_url, description, created_by
+      transmission, capacity, mileage, description, created_by, image_url
     } = carData;
 
+    console.log('Creating car with image_url:', image_url);
+    
     const { data, error } = await supabase
       .from('cars')
       .insert({
         brand, model, type, year, daily_rate, fuel_type,
-        transmission, capacity, mileage, image_url, description, created_by
+        transmission, capacity, mileage, 
+        image_url: image_url || null,
+        description, created_by
       })
       .select('*')
       .single();
 
     if (error) {
+      console.error('Database insert error:', error);
       throw new Error(error.message);
     }
 

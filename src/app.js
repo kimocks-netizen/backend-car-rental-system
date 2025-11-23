@@ -12,6 +12,7 @@ const staffRoutes = require('./routes/staffRoutes');
 
 // Import middleware
 const { errorHandler } = require('./middleware/errorHandler');
+const multer = require('multer');
 
 // Validate essential environment variables
 const requiredEnvVars = [
@@ -90,6 +91,20 @@ app.use('/api/bookings', bookingRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/staff', staffRoutes);
+
+// Multer error handler
+app.use((error, req, res, next) => {
+  if (error instanceof multer.MulterError) {
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ success: false, message: 'File too large. Maximum size is 5MB.' });
+    }
+    if (error.code === 'LIMIT_FILE_COUNT') {
+      return res.status(400).json({ success: false, message: 'Too many files. Maximum is 5 files.' });
+    }
+    return res.status(400).json({ success: false, message: error.message });
+  }
+  next(error);
+});
 
 // Error handler middleware
 app.use(errorHandler);
