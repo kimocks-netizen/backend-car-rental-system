@@ -186,6 +186,20 @@ const carService = {
       .gte('end_date', startDate);
     
     return !conflicts || conflicts.length === 0;
+  },
+
+  async getAvailableCars() {
+    const { data, error } = await supabase
+      .from('cars')
+      .select('*')
+      .eq('availability_status', 'available')
+      .order('daily_rate', { ascending: true });
+    
+    if (error) {
+      throw new Error(error.message);
+    }
+    
+    return data || [];
   }
 };
 

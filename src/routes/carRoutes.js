@@ -10,6 +10,7 @@ const router = express.Router();
 
 // Public routes
 router.get('/', carController.getAllCars);
+router.get('/available', carController.getAvailableCars);
 router.get('/search', carController.searchCars);
 router.get('/availability', carController.checkAvailability);
 router.get('/:id', carController.getCarById);

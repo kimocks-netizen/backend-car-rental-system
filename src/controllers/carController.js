@@ -95,6 +95,15 @@ const carController = {
     }
   },
 
+  async getAvailableCars(req, res) {
+    try {
+      const cars = await carService.getAvailableCars();
+      res.json({ success: true, data: cars });
+    } catch (error) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  },
+
   async uploadCarImage(req, res) {
     try {
       if (!req.file) {
