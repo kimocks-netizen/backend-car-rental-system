@@ -48,7 +48,10 @@ const bookingService = {
   async getBookingById(id) {
     const { data, error } = await supabase
       .from('bookings')
-      .select('*')
+      .select(`
+        *,
+        car:cars(id, brand, model, year, type)
+      `)
       .eq('id', id)
       .single();
     
