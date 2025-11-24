@@ -66,7 +66,7 @@ const bookingService = {
   },
 
   async createBooking(bookingData) {
-    const { car_id, customer_id, start_date, end_date, total_amount } = bookingData;
+    const { car_id, customer_id, start_date, end_date, total_amount, pickup_location, dropoff_location } = bookingData;
     const user_id = customer_id;
     
     // Check car availability
@@ -93,20 +93,27 @@ const bookingService = {
       throw new Error('Car is already booked for the selected dates');
     }
     
+    // Create booking object
+    const bookingObject = {
+      car_id,
+      user_id,
+      pickup_date: start_date,
+      return_date: end_date,
+      total_days: Math.ceil((new Date(end_date) - new Date(start_date)) / (1000 * 60 * 60 * 24)),
+      rental_amount: total_amount,
+      deposit_amount: total_amount * 0.3,
+      total_amount,
+      status: 'pending'
+    };
+    
+    // Add location fields if provided
+    if (pickup_location) bookingObject.pickup_location = pickup_location;
+    if (dropoff_location) bookingObject.dropoff_location = dropoff_location;
+    
     // Create booking
     const { data, error } = await supabase
       .from('bookings')
-      .insert({
-        car_id,
-        user_id,
-        pickup_date: start_date,
-        return_date: end_date,
-        total_days: Math.ceil((new Date(end_date) - new Date(start_date)) / (1000 * 60 * 60 * 24)),
-        rental_amount: total_amount,
-        deposit_amount: total_amount * 0.3,
-        total_amount,
-        status: 'pending'
-      })
+      .insert(bookingObject)
       .select('*')
       .single();
     

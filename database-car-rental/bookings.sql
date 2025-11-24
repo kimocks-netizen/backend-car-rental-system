@@ -5,6 +5,8 @@ CREATE TABLE bookings (
   manager_id UUID REFERENCES profiles(id), -- Staff who processed
   pickup_date DATE NOT NULL,
   return_date DATE NOT NULL,
+  pickup_location TEXT,
+  dropoff_location TEXT,
   total_days INTEGER NOT NULL,
   rental_amount DECIMAL(10,2) NOT NULL,
   deposit_amount DECIMAL(10,2) NOT NULL,
