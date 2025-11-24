@@ -128,6 +128,46 @@ const bookingController = {
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
     }
+  },
+
+  async completeReturnInspection(req, res) {
+    try {
+      const { damage_level, return_notes, additional_notes, fuel_level, condition, damage_charge } = req.body;
+      
+      const booking = await bookingService.getBookingById(req.params.id);
+      if (!booking) {
+        return res.status(404).json({ success: false, message: 'Booking not found' });
+      }
+      
+      // Update booking with inspection data
+      const updatedBooking = await bookingService.completeInspection(req.params.id, {
+        damage_level: damage_level || null,
+        return_notes: return_notes || null,
+        additional_notes,
+        fuel_level,
+        condition,
+        status: 'completed'
+      });
+      
+      // If there's damage charge, deduct from customer balance
+      if (damage_charge > 0) {
+        await balanceService.chargeDamage(
+          booking.user_id,
+          booking.id,
+          damage_charge,
+          return_notes || 'Damage assessment charge'
+        );
+      }
+      
+      res.json({ 
+        success: true, 
+        data: updatedBooking,
+        damage_charge: damage_charge || 0,
+        message: 'Return inspection completed successfully'
+      });
+    } catch (error) {
+      res.status(400).json({ success: false, message: error.message });
+    }
   }
 };
 

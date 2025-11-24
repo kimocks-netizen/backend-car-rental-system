@@ -175,6 +175,29 @@ const bookingService = {
     }
     
     return updatedBooking;
+  },
+
+  async completeInspection(id, inspectionData) {
+    const { damage_level, return_notes, additional_notes, fuel_level, condition, status } = inspectionData;
+    
+    const { data, error } = await supabase
+      .from('bookings')
+      .update({
+        damage_level,
+        return_notes,
+        pickup_notes: additional_notes, // Using pickup_notes for additional inspection notes
+        status,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select('*')
+      .single();
+    
+    if (error) {
+      throw new Error(error.message);
+    }
+    
+    return data;
   }
 };
 

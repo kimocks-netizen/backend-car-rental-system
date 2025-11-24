@@ -5,7 +5,10 @@ const { requireRole } = require('../middleware/roleMiddleware');
 
 const router = express.Router();
 
-// All admin routes require admin role
+// Staff can access user details for inspections
+router.get('/users/:id', authenticate, requireRole(['admin', 'staff']), adminController.getUserById);
+
+// All other admin routes require admin role only
 router.use(authenticate, requireRole(['admin']));
 
 // Admin dashboard and management

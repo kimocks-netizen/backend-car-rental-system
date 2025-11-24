@@ -167,6 +167,14 @@ const adminController = {
       
       const confirmedRevenue = confirmedBookings?.reduce((sum, booking) => sum + booking.total_amount, 0) || 0;
       
+      // Calculate revenue from active bookings (full amount)
+      const { data: activeBookings } = await supabase
+        .from('bookings')
+        .select('total_amount')
+        .eq('status', 'active');
+      
+      const activeRevenue = activeBookings?.reduce((sum, booking) => sum + booking.total_amount, 0) || 0;
+      
       // Calculate revenue from cancelled bookings (20% cancellation fee)
       const { data: cancelledBookings } = await supabase
         .from('bookings')
@@ -175,8 +183,22 @@ const adminController = {
       
       const cancellationRevenue = cancelledBookings?.reduce((sum, booking) => sum + (booking.total_amount * 0.2), 0) || 0;
       
-      // Total revenue = confirmed bookings + cancellation fees
-      const totalRevenue = confirmedRevenue + cancellationRevenue;
+      // Calculate damage charges from completed bookings
+      const { data: completedBookings } = await supabase
+        .from('bookings')
+        .select('total_amount, damage_level')
+        .eq('status', 'completed')
+        .not('damage_level', 'is', null);
+      
+      const damageRevenue = completedBookings?.reduce((sum, booking) => {
+        if (booking.damage_level > 0) {
+          return sum + ((booking.damage_level / 10) * booking.total_amount);
+        }
+        return sum;
+      }, 0) || 0;
+      
+      // Total revenue = confirmed + active + cancellation fees + damage charges
+      const totalRevenue = confirmedRevenue + activeRevenue + cancellationRevenue + damageRevenue;
       
       // Monthly revenue (current month)
       const currentMonth = new Date();
@@ -188,15 +210,35 @@ const adminController = {
         .eq('status', 'confirmed')
         .gte('created_at', firstDayOfMonth);
       
+      const { data: monthlyActive } = await supabase
+        .from('bookings')
+        .select('total_amount')
+        .eq('status', 'active')
+        .gte('created_at', firstDayOfMonth);
+      
       const { data: monthlyCancelled } = await supabase
         .from('bookings')
         .select('total_amount')
         .eq('status', 'cancelled')
         .gte('created_at', firstDayOfMonth);
       
+      const { data: monthlyCompleted } = await supabase
+        .from('bookings')
+        .select('total_amount, damage_level')
+        .eq('status', 'completed')
+        .gte('created_at', firstDayOfMonth)
+        .not('damage_level', 'is', null);
+      
       const monthlyConfirmedRevenue = monthlyConfirmed?.reduce((sum, booking) => sum + booking.total_amount, 0) || 0;
+      const monthlyActiveRevenue = monthlyActive?.reduce((sum, booking) => sum + booking.total_amount, 0) || 0;
       const monthlyCancellationRevenue = monthlyCancelled?.reduce((sum, booking) => sum + (booking.total_amount * 0.2), 0) || 0;
-      const monthlyRevenue = monthlyConfirmedRevenue + monthlyCancellationRevenue;
+      const monthlyDamageRevenue = monthlyCompleted?.reduce((sum, booking) => {
+        if (booking.damage_level > 0) {
+          return sum + ((booking.damage_level / 10) * booking.total_amount);
+        }
+        return sum;
+      }, 0) || 0;
+      const monthlyRevenue = monthlyConfirmedRevenue + monthlyActiveRevenue + monthlyCancellationRevenue + monthlyDamageRevenue;
       
       // Calculate incoming revenue from pending bookings
       const { data: pendingBookings } = await supabase
@@ -239,7 +281,7 @@ const adminController = {
         .from('cars')
         .select('*', { count: 'exact', head: true });
       
-      const { count: activeBookings } = await supabase
+      const { count: activeBookingsCount } = await supabase
         .from('bookings')
         .select('*', { count: 'exact', head: true })
         .eq('status', 'active');
@@ -250,7 +292,7 @@ const adminController = {
           stats: {
             totalUsers: totalUsers || 0,
             totalCars: totalCars || 0,
-            activeBookings: activeBookings || 0,
+            activeBookings: activeBookingsCount || 0,
             totalRevenue: totalRevenue
           },
           recentBookings: recentBookings || [],
@@ -290,6 +332,24 @@ const adminController = {
       res.json({ success: true, data });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
+    }
+  },
+
+  async getUserById(req, res) {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, email, full_name, phone, user_role, user_status, created_at')
+        .eq('id', req.params.id)
+        .single();
+      
+      if (error || !data) {
+        return res.status(404).json({ success: false, message: 'User not found' });
+      }
+      
+      res.json({ success: true, data });
+    } catch (error) {
+      res.status(500).json({ success: false, message: error.message });
     }
   }
 };

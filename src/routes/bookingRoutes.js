@@ -20,5 +20,6 @@ router.get('/', bookingController.getAllBookings);
 // Staff/Admin routes
 router.patch('/:id/status', requireRole(['admin', 'staff']), bookingController.updateBookingStatus);
 router.patch('/:id/return', requireRole(['admin', 'staff']), bookingController.returnCar);
+router.patch('/:id/complete-return', requireRole(['admin', 'staff']), bookingController.completeReturnInspection);
 
 module.exports = router;

@@ -107,6 +107,21 @@ const balanceService = {
     };
   },
 
+  async chargeDamage(userId, bookingId, damageAmount, damageDescription) {
+    const newBalance = await this.createOrUpdateBalance(
+      userId, 
+      damageAmount, 
+      'charge', 
+      bookingId, 
+      `Damage assessment charge: ${damageDescription}`
+    );
+    
+    return {
+      chargeAmount: damageAmount,
+      newBalance
+    };
+  },
+
   async getTransactionHistory(userId) {
     const { data, error } = await supabase
       .from('balance_transactions')
