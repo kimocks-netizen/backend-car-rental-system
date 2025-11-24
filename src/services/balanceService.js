@@ -20,14 +20,35 @@ const balanceService = {
     const currentBalance = await this.getCustomerBalance(userId);
     const newBalance = transactionType === 'refund' ? currentBalance + amount : currentBalance - amount;
     
-    // Update or create balance record
-    const { error: balanceError } = await supabase
+    // Try to update existing record first
+    const { data: existingRecord } = await supabase
       .from('customer_balances')
-      .upsert({
-        user_id: userId,
-        balance: Math.max(0, newBalance), // Prevent negative balance
-        updated_at: new Date().toISOString()
-      });
+      .select('user_id')
+      .eq('user_id', userId)
+      .single();
+    
+    let balanceError;
+    if (existingRecord) {
+      // Update existing record
+      const { error } = await supabase
+        .from('customer_balances')
+        .update({
+          balance: Math.max(0, newBalance),
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', userId);
+      balanceError = error;
+    } else {
+      // Create new record
+      const { error } = await supabase
+        .from('customer_balances')
+        .insert({
+          user_id: userId,
+          balance: Math.max(0, newBalance),
+          updated_at: new Date().toISOString()
+        });
+      balanceError = error;
+    }
     
     if (balanceError) {
       throw new Error(balanceError.message);
@@ -66,6 +87,22 @@ const balanceService = {
     return {
       cancellationFee,
       refundAmount,
+      newBalance
+    };
+  },
+
+  async processFullRefund(userId, bookingId, totalAmount) {
+    const newBalance = await this.createOrUpdateBalance(
+      userId, 
+      totalAmount, 
+      'refund', 
+      bookingId, 
+      `Full refund for booking cancelled by staff`
+    );
+    
+    return {
+      cancellationFee: 0,
+      refundAmount: totalAmount,
       newBalance
     };
   },

@@ -60,6 +60,20 @@ const bookingController = {
   async updateBookingStatus(req, res) {
     try {
       const { status } = req.body;
+      
+      // If staff/admin is cancelling a booking, process full refund
+      if (status === 'cancelled' && ['admin', 'staff'].includes(req.user.role)) {
+        const booking = await bookingService.getBookingById(req.params.id);
+        if (booking) {
+          // Process full refund (100%) for staff cancellations
+          await balanceService.processFullRefund(
+            booking.user_id,
+            booking.id,
+            booking.total_amount
+          );
+        }
+      }
+      
       const booking = await bookingService.updateBookingStatus(req.params.id, status);
       if (!booking) {
         return res.status(404).json({ success: false, message: 'Booking not found' });
