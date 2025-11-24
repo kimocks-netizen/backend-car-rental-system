@@ -159,15 +159,76 @@ const adminController = {
         .order('created_at', { ascending: false })
         .limit(10);
       
-      // Get monthly revenue
-      const { data: payments } = await supabase
-        .from('payments')
-        .select('amount, created_at')
-        .in('payment_type', ['deposit', 'rental'])
-        .eq('status', 'completed')
-        .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString());
+      // Calculate revenue from confirmed bookings (full amount)
+      const { data: confirmedBookings } = await supabase
+        .from('bookings')
+        .select('total_amount')
+        .eq('status', 'confirmed');
       
-      const monthlyRevenue = payments?.reduce((sum, payment) => sum + payment.amount, 0) || 0;
+      const confirmedRevenue = confirmedBookings?.reduce((sum, booking) => sum + booking.total_amount, 0) || 0;
+      
+      // Calculate revenue from cancelled bookings (20% cancellation fee)
+      const { data: cancelledBookings } = await supabase
+        .from('bookings')
+        .select('total_amount')
+        .eq('status', 'cancelled');
+      
+      const cancellationRevenue = cancelledBookings?.reduce((sum, booking) => sum + (booking.total_amount * 0.2), 0) || 0;
+      
+      // Total revenue = confirmed bookings + cancellation fees
+      const totalRevenue = confirmedRevenue + cancellationRevenue;
+      
+      // Monthly revenue (current month)
+      const currentMonth = new Date();
+      const firstDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).toISOString();
+      
+      const { data: monthlyConfirmed } = await supabase
+        .from('bookings')
+        .select('total_amount')
+        .eq('status', 'confirmed')
+        .gte('created_at', firstDayOfMonth);
+      
+      const { data: monthlyCancelled } = await supabase
+        .from('bookings')
+        .select('total_amount')
+        .eq('status', 'cancelled')
+        .gte('created_at', firstDayOfMonth);
+      
+      const monthlyConfirmedRevenue = monthlyConfirmed?.reduce((sum, booking) => sum + booking.total_amount, 0) || 0;
+      const monthlyCancellationRevenue = monthlyCancelled?.reduce((sum, booking) => sum + (booking.total_amount * 0.2), 0) || 0;
+      const monthlyRevenue = monthlyConfirmedRevenue + monthlyCancellationRevenue;
+      
+      // Calculate incoming revenue from pending bookings
+      const { data: pendingBookings } = await supabase
+        .from('bookings')
+        .select('total_amount')
+        .eq('status', 'pending');
+      
+      const incomingRevenue = pendingBookings?.reduce((sum, booking) => sum + booking.total_amount, 0) || 0;
+      
+      // Get booking status distribution for pie chart
+      const { data: allBookings } = await supabase
+        .from('bookings')
+        .select('status');
+      
+      const statusDistribution = allBookings?.reduce((acc, booking) => {
+        acc[booking.status] = (acc[booking.status] || 0) + 1;
+        return acc;
+      }, {}) || {};
+      
+      // Get daily booking trends for line chart (last 30 days)
+      const { data: dailyBookings } = await supabase
+        .from('bookings')
+        .select('created_at')
+        .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
+        .order('created_at', { ascending: true });
+      
+      const dailyTrends = {};
+      dailyBookings?.forEach(booking => {
+        const day = new Date(booking.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        if (!dailyTrends[day]) dailyTrends[day] = 0;
+        dailyTrends[day]++;
+      });
       
       // Get stats
       const { count: totalUsers } = await supabase
@@ -183,14 +244,6 @@ const adminController = {
         .select('*', { count: 'exact', head: true })
         .eq('status', 'active');
       
-      const { data: allPayments } = await supabase
-        .from('payments')
-        .select('amount')
-        .in('payment_type', ['deposit', 'rental'])
-        .eq('status', 'completed');
-      
-      const totalRevenue = allPayments?.reduce((sum, payment) => sum + payment.amount, 0) || 0;
-      
       res.json({
         success: true,
         data: {
@@ -201,7 +254,12 @@ const adminController = {
             totalRevenue: totalRevenue
           },
           recentBookings: recentBookings || [],
-          monthlyRevenue
+          monthlyRevenue,
+          incomingRevenue,
+          chartData: {
+            statusDistribution,
+            dailyTrends
+          }
         }
       });
     } catch (error) {

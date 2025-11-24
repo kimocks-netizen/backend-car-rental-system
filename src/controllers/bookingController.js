@@ -1,4 +1,5 @@
 const bookingService = require('../services/bookingService');
+const balanceService = require('../services/balanceService');
 
 const bookingController = {
   async getAllBookings(req, res) {
@@ -81,8 +82,23 @@ const bookingController = {
         return res.status(403).json({ success: false, message: 'Access denied' });
       }
       
+      // Process refund if requested
+      let refundInfo = null;
+      if (req.body.apply_cancellation_fee) {
+        refundInfo = await balanceService.processRefund(
+          booking.user_id,
+          booking.id,
+          booking.total_amount
+        );
+      }
+      
       const cancelledBooking = await bookingService.updateBookingStatus(req.params.id, 'cancelled');
-      res.json({ success: true, data: cancelledBooking });
+      
+      res.json({ 
+        success: true, 
+        data: cancelledBooking,
+        refund: refundInfo
+      });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
     }

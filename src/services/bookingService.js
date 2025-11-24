@@ -126,7 +126,12 @@ const bookingService = {
       .single();
     
     if (error) {
-      return null;
+      console.error('Error updating booking status:', error);
+      throw new Error(`Failed to update booking status: ${error.message}`);
+    }
+    
+    if (!data) {
+      throw new Error('Booking not found or access denied');
     }
     
     return data;
