@@ -34,7 +34,10 @@ const bookingService = {
   async getBookingsByUserId(userId) {
     const { data, error } = await supabase
       .from('bookings')
-      .select('*')
+      .select(`
+        *,
+        car:cars(id, brand, model, year, type)
+      `)
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
     
