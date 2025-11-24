@@ -175,6 +175,14 @@ const adminController = {
       
       const activeRevenue = activeBookings?.reduce((sum, booking) => sum + booking.total_amount, 0) || 0;
       
+      // Calculate revenue from completed bookings (full amount)
+      const { data: completedBookings } = await supabase
+        .from('bookings')
+        .select('total_amount')
+        .eq('status', 'completed');
+      
+      const completedRevenue = completedBookings?.reduce((sum, booking) => sum + booking.total_amount, 0) || 0;
+      
       // Calculate revenue from cancelled bookings (20% cancellation fee)
       const { data: cancelledBookings } = await supabase
         .from('bookings')
@@ -184,21 +192,21 @@ const adminController = {
       const cancellationRevenue = cancelledBookings?.reduce((sum, booking) => sum + (booking.total_amount * 0.2), 0) || 0;
       
       // Calculate damage charges from completed bookings
-      const { data: completedBookings } = await supabase
+      const { data: completedWithDamage } = await supabase
         .from('bookings')
         .select('total_amount, damage_level')
         .eq('status', 'completed')
         .not('damage_level', 'is', null);
       
-      const damageRevenue = completedBookings?.reduce((sum, booking) => {
+      const damageRevenue = completedWithDamage?.reduce((sum, booking) => {
         if (booking.damage_level > 0) {
           return sum + ((booking.damage_level / 10) * booking.total_amount);
         }
         return sum;
       }, 0) || 0;
       
-      // Total revenue = confirmed + active + cancellation fees + damage charges
-      const totalRevenue = confirmedRevenue + activeRevenue + cancellationRevenue + damageRevenue;
+      // Total revenue = confirmed + active + completed + cancellation fees + damage charges
+      const totalRevenue = confirmedRevenue + activeRevenue + completedRevenue + cancellationRevenue + damageRevenue;
       
       // Monthly revenue (current month)
       const currentMonth = new Date();
@@ -216,13 +224,19 @@ const adminController = {
         .eq('status', 'active')
         .gte('created_at', firstDayOfMonth);
       
+      const { data: monthlyCompleted } = await supabase
+        .from('bookings')
+        .select('total_amount')
+        .eq('status', 'completed')
+        .gte('created_at', firstDayOfMonth);
+      
       const { data: monthlyCancelled } = await supabase
         .from('bookings')
         .select('total_amount')
         .eq('status', 'cancelled')
         .gte('created_at', firstDayOfMonth);
       
-      const { data: monthlyCompleted } = await supabase
+      const { data: monthlyCompletedWithDamage } = await supabase
         .from('bookings')
         .select('total_amount, damage_level')
         .eq('status', 'completed')
@@ -231,14 +245,15 @@ const adminController = {
       
       const monthlyConfirmedRevenue = monthlyConfirmed?.reduce((sum, booking) => sum + booking.total_amount, 0) || 0;
       const monthlyActiveRevenue = monthlyActive?.reduce((sum, booking) => sum + booking.total_amount, 0) || 0;
+      const monthlyCompletedRevenue = monthlyCompleted?.reduce((sum, booking) => sum + booking.total_amount, 0) || 0;
       const monthlyCancellationRevenue = monthlyCancelled?.reduce((sum, booking) => sum + (booking.total_amount * 0.2), 0) || 0;
-      const monthlyDamageRevenue = monthlyCompleted?.reduce((sum, booking) => {
+      const monthlyDamageRevenue = monthlyCompletedWithDamage?.reduce((sum, booking) => {
         if (booking.damage_level > 0) {
           return sum + ((booking.damage_level / 10) * booking.total_amount);
         }
         return sum;
       }, 0) || 0;
-      const monthlyRevenue = monthlyConfirmedRevenue + monthlyActiveRevenue + monthlyCancellationRevenue + monthlyDamageRevenue;
+      const monthlyRevenue = monthlyConfirmedRevenue + monthlyActiveRevenue + monthlyCompletedRevenue + monthlyCancellationRevenue + monthlyDamageRevenue;
       
       // Calculate incoming revenue from pending bookings
       const { data: pendingBookings } = await supabase
