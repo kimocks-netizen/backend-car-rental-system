@@ -117,7 +117,6 @@ app.use((req, res) => {
 });
 
 const PORT = process.env.PORT || 8000;
-const HOST = process.env.HOST || 'localhost';
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (err) => {
@@ -129,7 +128,7 @@ process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
-app.listen(PORT, HOST, () => {
-  console.log(`Car Rental API Server running on ${HOST}:${PORT}`);
-  console.log(`Health check: http://${HOST}:${PORT}/health`);
+app.listen(PORT, () => {
+  console.log(`Car Rental API Server running on port ${PORT}`);
+  console.log(`Health check: /health`);
 });
