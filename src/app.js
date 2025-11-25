@@ -43,6 +43,11 @@ const corsOptions = {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
+    // Check if wildcard is set
+    if (allowedOrigins.includes('*')) {
+      return callback(null, true);
+    }
+    
     // Allow localhost for development
     if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
       return callback(null, true);
