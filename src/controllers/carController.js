@@ -3,8 +3,8 @@ const carService = require('../services/carService');
 const carController = {
   async getAllCars(req, res) {
     try {
-      const { page = 1, limit = 10, type, fuel_type, availability_status } = req.query;
-      const cars = await carService.getAllCars({ page, limit, type, fuel_type, availability_status });
+      const { page = 1, limit = 10, type, fuel_type, availability_status, transmission, min_rate, max_rate, search, sortField, sortDirection } = req.query;
+      const cars = await carService.getAllCars({ page, limit, type, fuel_type, availability_status, transmission, min_rate, max_rate, search, sortField, sortDirection });
       res.json({ success: true, data: cars });
     } catch (error) {
       res.status(500).json({ success: false, message: error.message });
@@ -97,7 +97,8 @@ const carController = {
 
   async getAvailableCars(req, res) {
     try {
-      const cars = await carService.getAvailableCars();
+      const { page = 1, limit = 10, type, fuel_type, transmission, min_rate, max_rate, q } = req.query;
+      const cars = await carService.getAvailableCars({ page, limit, type, fuel_type, transmission, min_rate, max_rate, q });
       res.json({ success: true, data: cars });
     } catch (error) {
       res.status(500).json({ success: false, message: error.message });

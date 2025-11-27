@@ -60,7 +60,7 @@ const adminController = {
 
   async getAllUsers(req, res) {
     try {
-      const { page = 1, limit = 10, role, status } = req.query;
+      const { page = 1, limit = 10, role, status, search, sortField = 'created_at', sortDirection = 'desc' } = req.query;
       const offset = (page - 1) * limit;
       
       let query = supabase
@@ -75,8 +75,13 @@ const adminController = {
         query = query.eq('user_status', status);
       }
       
+      if (search) {
+        query = query.or(`full_name.ilike.%${search}%,email.ilike.%${search}%`);
+      }
+      
+      const ascending = sortDirection === 'asc';
       const { data: users, error, count } = await query
-        .order('created_at', { ascending: false })
+        .order(sortField, { ascending })
         .range(offset, offset + limit - 1);
       
       if (error) {
