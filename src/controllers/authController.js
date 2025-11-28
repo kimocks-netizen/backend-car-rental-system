@@ -138,7 +138,7 @@ exports.getProfile = async (req, res) => {
   try {
     const { data: profile, error } = await supabase
       .from('profiles')
-      .select('id, email, full_name, phone, user_role, created_at')
+      .select('id, email, full_name, phone, cust_address, license_number, user_role, created_at')
       .eq('id', req.user.id)
       .single();
 
@@ -155,12 +155,12 @@ exports.getProfile = async (req, res) => {
 
 // Update user profile
 exports.updateProfile = async (req, res) => {
-  const { full_name, phone } = req.body;
+  const { full_name, phone, cust_address, license_number } = req.body;
 
   try {
     const { data: profile, error } = await supabase
       .from('profiles')
-      .update({ full_name, phone, updated_at: new Date() })
+      .update({ full_name, phone, cust_address, license_number, updated_at: new Date() })
       .eq('id', req.user.id)
       .select('*')
       .single();
@@ -174,6 +174,8 @@ exports.updateProfile = async (req, res) => {
       email: profile.email,
       full_name: profile.full_name,
       phone: profile.phone,
+      cust_address: profile.cust_address,
+      license_number: profile.license_number,
       role: profile.user_role
     }, 'Profile updated successfully');
 
