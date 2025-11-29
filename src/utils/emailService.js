@@ -1,6 +1,6 @@
 const { Resend } = require('resend');
 
-const resend = new Resend('re_gHQZVsHx_6jsaKHZGWGNrjWNqjeBHtEa8');
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const getBaseUrl = () => {
   return process.env.NODE_ENV === 'production' 
