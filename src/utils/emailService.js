@@ -29,15 +29,15 @@ const sendBookingConfirmationEmail = async (email, bookingData, carData) => {
               <h3 style="color: #dc3545; margin: 0 0 15px 0;">Booking Details</h3>
               <p style="margin: 5px 0; color: #495057;"><strong>Booking ID:</strong> ${bookingData.id}</p>
               <p style="margin: 5px 0; color: #495057;"><strong>Status:</strong> <span style="color: #ffc107; font-weight: bold;">Pending Approval</span></p>
-              <p style="margin: 5px 0; color: #495057;"><strong>Pickup Date:</strong> ${new Date(bookingData.start_date).toLocaleDateString()}</p>
-              <p style="margin: 5px 0; color: #495057;"><strong>Return Date:</strong> ${new Date(bookingData.end_date).toLocaleDateString()}</p>
+              <p style="margin: 5px 0; color: #495057;"><strong>Pickup Date:</strong> ${new Date(bookingData.pickup_date).toLocaleDateString()}</p>
+              <p style="margin: 5px 0; color: #495057;"><strong>Return Date:</strong> ${new Date(bookingData.return_date).toLocaleDateString()}</p>
               <p style="margin: 5px 0; color: #495057;"><strong>Pickup Location:</strong> ${bookingData.pickup_location}</p>
               <p style="margin: 5px 0; color: #495057;"><strong>Drop-off Location:</strong> ${bookingData.dropoff_location}</p>
             </div>
             
             <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid #28a745;">
               <h3 style="color: #28a745; margin: 0 0 15px 0;">Vehicle Information</h3>
-              <p style="margin: 5px 0; color: #495057;"><strong>Car:</strong> ${carData.make} ${carData.model}</p>
+              <p style="margin: 5px 0; color: #495057;"><strong>Car:</strong> ${carData.brand} ${carData.model}</p>
               <p style="margin: 5px 0; color: #495057;"><strong>Type:</strong> ${carData.type}</p>
               <p style="margin: 5px 0; color: #495057;"><strong>Daily Rate:</strong> £${carData.daily_rate}</p>
               <p style="margin: 5px 0; color: #495057;"><strong>Total Amount:</strong> £${bookingData.total_amount}</p>
@@ -102,9 +102,9 @@ const sendBookingApprovedEmail = async (email, bookingData, carData) => {
               <h3 style="color: #155724; margin: 0 0 15px 0;">Confirmed Booking Details</h3>
               <p style="margin: 5px 0; color: #155724;"><strong>Booking ID:</strong> ${bookingData.id}</p>
               <p style="margin: 5px 0; color: #155724;"><strong>Status:</strong> <span style="color: #28a745; font-weight: bold;">Confirmed</span></p>
-              <p style="margin: 5px 0; color: #155724;"><strong>Pickup Date:</strong> ${new Date(bookingData.start_date).toLocaleDateString()}</p>
-              <p style="margin: 5px 0; color: #155724;"><strong>Return Date:</strong> ${new Date(bookingData.end_date).toLocaleDateString()}</p>
-              <p style="margin: 5px 0; color: #155724;"><strong>Vehicle:</strong> ${carData.make} ${carData.model}</p>
+              <p style="margin: 5px 0; color: #155724;"><strong>Pickup Date:</strong> ${new Date(bookingData.pickup_date).toLocaleDateString()}</p>
+              <p style="margin: 5px 0; color: #155724;"><strong>Return Date:</strong> ${new Date(bookingData.return_date).toLocaleDateString()}</p>
+              <p style="margin: 5px 0; color: #155724;"><strong>Vehicle:</strong> ${carData.brand} ${carData.model}</p>
             </div>
             
             <div style="text-align: center; margin: 30px 0;">
@@ -161,8 +161,8 @@ const sendBookingActiveEmail = async (email, bookingData, carData) => {
             <div style="background: #cce5ff; padding: 20px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid #007bff;">
               <h3 style="color: #004085; margin: 0 0 15px 0;">Active Rental</h3>
               <p style="margin: 5px 0; color: #004085;"><strong>Booking ID:</strong> ${bookingData.id}</p>
-              <p style="margin: 5px 0; color: #004085;"><strong>Vehicle:</strong> ${carData.make} ${carData.model}</p>
-              <p style="margin: 5px 0; color: #004085;"><strong>Return Due:</strong> ${new Date(bookingData.end_date).toLocaleDateString()}</p>
+              <p style="margin: 5px 0; color: #004085;"><strong>Vehicle:</strong> ${carData.brand} ${carData.model}</p>
+              <p style="margin: 5px 0; color: #004085;"><strong>Return Due:</strong> ${new Date(bookingData.return_date).toLocaleDateString()}</p>
             </div>
             
             <div style="background: #fff3cd; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107;">
@@ -211,8 +211,8 @@ const sendBookingCancelledEmail = async (email, bookingData, carData, reason = '
             <div style="background: #f8d7da; padding: 20px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid #dc3545;">
               <h3 style="color: #721c24; margin: 0 0 15px 0;">Cancelled Booking</h3>
               <p style="margin: 5px 0; color: #721c24;"><strong>Booking ID:</strong> ${bookingData.id}</p>
-              <p style="margin: 5px 0; color: #721c24;"><strong>Vehicle:</strong> ${carData.make} ${carData.model}</p>
-              <p style="margin: 5px 0; color: #721c24;"><strong>Original Dates:</strong> ${new Date(bookingData.start_date).toLocaleDateString()} - ${new Date(bookingData.end_date).toLocaleDateString()}</p>
+              <p style="margin: 5px 0; color: #721c24;"><strong>Vehicle:</strong> ${carData.brand} ${carData.model}</p>
+              <p style="margin: 5px 0; color: #721c24;"><strong>Original Dates:</strong> ${new Date(bookingData.pickup_date).toLocaleDateString()} - ${new Date(bookingData.return_date).toLocaleDateString()}</p>
               ${reason ? `<p style="margin: 5px 0; color: #721c24;"><strong>Reason:</strong> ${reason}</p>` : ''}
             </div>
             
