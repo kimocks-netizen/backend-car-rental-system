@@ -1,5 +1,6 @@
 const bookingService = require('../services/bookingService');
 const balanceService = require('../services/balanceService');
+const emailService = require('../utils/emailService');
 
 const bookingController = {
   async getAllBookings(req, res) {
@@ -51,6 +52,31 @@ const bookingController = {
     try {
       const bookingData = { ...req.body, customer_id: req.user.id };
       const booking = await bookingService.createBooking(bookingData);
+      
+      // Send booking confirmation email
+      try {
+        console.log('📧 Preparing to send booking confirmation email');
+        console.log('📧 Booking data for email:', { useAlternativeEmail: bookingData.useAlternativeEmail, alternativeEmail: bookingData.alternativeEmail });
+        console.log('📧 User email:', req.user.email);
+        
+        const emailAddress = bookingData.useAlternativeEmail && bookingData.alternativeEmail 
+          ? bookingData.alternativeEmail 
+          : req.user.email;
+        
+        console.log('📧 Selected email address:', emailAddress);
+        
+        // Get car details for email
+        const carData = await bookingService.getCarById(booking.car_id);
+        console.log('📧 Car data for email:', carData);
+        
+        console.log('📧 Sending booking confirmation email to:', emailAddress);
+        await emailService.sendBookingConfirmationEmail(emailAddress, booking, carData);
+        console.log('✅ Booking confirmation email sent successfully');
+      } catch (emailError) {
+        console.error('❌ Failed to send booking confirmation email:', emailError);
+        // Don't fail the booking if email fails
+      }
+      
       res.status(201).json({ success: true, data: booking });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
@@ -61,23 +87,41 @@ const bookingController = {
     try {
       const { status } = req.body;
       
+      // Get booking details before update
+      const existingBooking = await bookingService.getBookingById(req.params.id);
+      if (!existingBooking) {
+        return res.status(404).json({ success: false, message: 'Booking not found' });
+      }
+      
       // If staff/admin is cancelling a booking, process full refund
       if (status === 'cancelled' && ['admin', 'staff'].includes(req.user.role)) {
-        const booking = await bookingService.getBookingById(req.params.id);
-        if (booking) {
-          // Process full refund (100%) for staff cancellations
-          await balanceService.processFullRefund(
-            booking.user_id,
-            booking.id,
-            booking.total_amount
-          );
-        }
+        // Process full refund (100%) for staff cancellations
+        await balanceService.processFullRefund(
+          existingBooking.user_id,
+          existingBooking.id,
+          existingBooking.total_amount
+        );
       }
       
       const booking = await bookingService.updateBookingStatus(req.params.id, status);
-      if (!booking) {
-        return res.status(404).json({ success: false, message: 'Booking not found' });
+      
+      // Send email notifications for status changes
+      try {
+        const userEmail = await bookingService.getUserEmail(booking.user_id);
+        const carData = await bookingService.getCarById(booking.car_id);
+        
+        if (status === 'confirmed') {
+          await emailService.sendBookingApprovedEmail(userEmail, booking, carData);
+        } else if (status === 'active') {
+          await emailService.sendBookingActiveEmail(userEmail, booking, carData);
+        } else if (status === 'cancelled') {
+          await emailService.sendBookingCancelledEmail(userEmail, booking, carData);
+        }
+      } catch (emailError) {
+        console.error('Failed to send status update email:', emailError);
+        // Don't fail the status update if email fails
       }
+      
       res.json({ success: true, data: booking });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
