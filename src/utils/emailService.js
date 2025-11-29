@@ -44,7 +44,7 @@ const sendBookingConfirmationEmail = async (email, bookingData, carData) => {
             </div>
             
             <div style="text-align: center; margin: 30px 0;">
-              <a href="${baseUrl}/customer/bookings" style="background: #dc3545; color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; font-weight: bold; display: inline-block;">
+              <a href="${baseUrl}/bookings" style="background: #dc3545; color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; font-weight: bold; display: inline-block;">
                 View Booking Details
               </a>
             </div>
@@ -108,7 +108,7 @@ const sendBookingApprovedEmail = async (email, bookingData, carData) => {
             </div>
             
             <div style="text-align: center; margin: 30px 0;">
-              <a href="${baseUrl}/customer/bookings" style="background: #28a745; color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; font-weight: bold; display: inline-block;">
+              <a href="${baseUrl}/bookings" style="background: #28a745; color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; font-weight: bold; display: inline-block;">
                 View Booking
               </a>
             </div>
