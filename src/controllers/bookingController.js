@@ -203,6 +203,24 @@ const bookingController = {
         );
       }
       
+      // Send return inspection email
+      try {
+        const userEmail = await bookingService.getUserEmail(booking.user_id);
+        const carData = await bookingService.getCarById(booking.car_id);
+        
+        await emailService.sendReturnInspectionEmail(userEmail, booking, carData, {
+          damage_level,
+          return_notes,
+          additional_notes,
+          fuel_level,
+          condition,
+          damage_charge: damage_charge || 0
+        });
+      } catch (emailError) {
+        console.error('Failed to send return inspection email:', emailError);
+        // Don't fail the inspection if email fails
+      }
+      
       res.json({ 
         success: true, 
         data: updatedBooking,

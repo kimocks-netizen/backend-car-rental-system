@@ -62,7 +62,7 @@ const sendBookingConfirmationEmail = async (email, bookingData, carData) => {
             <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #dee2e6;">
               <p style="font-size: 12px; color: #6c757d; margin: 0;">
                 This email was sent from Car Rental System. If you have any questions, please contact our support team.<br>
-                <em>Note: Car Rental System is currently using a rented domain for demo purposes.</em>
+                <em style="color: #dc3545;">Note: Car Rental System is currently using a rented domain for demo purposes.</em>
               </p>
             </div>
           </div>
@@ -126,7 +126,7 @@ const sendBookingApprovedEmail = async (email, bookingData, carData) => {
             <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #dee2e6;">
               <p style="font-size: 12px; color: #6c757d; margin: 0;">
                 This email was sent from Car Rental System. If you have any questions, please contact our support team.<br>
-                <em>Note: Car Rental System is currently using a rented domain for demo purposes.</em>
+                <em style="color: #dc3545;">Note: Car Rental System is currently using a rented domain for demo purposes.</em>
               </p>
             </div>
           </div>
@@ -178,7 +178,7 @@ const sendBookingActiveEmail = async (email, bookingData, carData) => {
             <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #dee2e6;">
               <p style="font-size: 12px; color: #6c757d; margin: 0;">
                 This email was sent from Car Rental System. If you have any questions, please contact our support team.<br>
-                <em>Note: Car Rental System is currently using a rented domain for demo purposes.</em>
+                <em style="color: #dc3545;">Note: Car Rental System is currently using a rented domain for demo purposes.</em>
               </p>
             </div>
           </div>
@@ -225,7 +225,7 @@ const sendBookingCancelledEmail = async (email, bookingData, carData, reason = '
             <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #dee2e6;">
               <p style="font-size: 12px; color: #6c757d; margin: 0;">
                 This email was sent from Car Rental System. If you have any questions, please contact our support team.<br>
-                <em>Note: Car Rental System is currently using a rented domain for demo purposes.</em>
+                <em style="color: #dc3545;">Note: Car Rental System is currently using a rented domain for demo purposes.</em>
               </p>
             </div>
           </div>
@@ -241,9 +241,85 @@ const sendBookingCancelledEmail = async (email, bookingData, carData, reason = '
   }
 };
 
+const sendReturnInspectionEmail = async (email, bookingData, carData, inspectionData) => {
+  try {
+    const baseUrl = getBaseUrl();
+    const damageCharge = inspectionData.damage_charge || 0;
+    
+    const { data, error } = await resend.emails.send({
+      from: 'noreply@carogroupinvestments.com',
+      to: email,
+      subject: 'Vehicle Return Inspection Complete - Car Rental System',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #f8f9fa;">
+          <div style="background: #ffffff; border-radius: 10px; padding: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #28a745; margin: 0; font-size: 28px;">🏁 Return Inspection Complete!</h1>
+              <p style="color: #6c757d; margin: 10px 0 0 0;">Your vehicle return has been processed</p>
+            </div>
+            
+            <div style="background: #d4edda; padding: 20px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid #28a745;">
+              <h3 style="color: #155724; margin: 0 0 15px 0;">Inspection Summary</h3>
+              <p style="margin: 5px 0; color: #155724;"><strong>Booking ID:</strong> ${bookingData.id}</p>
+              <p style="margin: 5px 0; color: #155724;"><strong>Vehicle:</strong> ${carData.brand} ${carData.model}</p>
+              <p style="margin: 5px 0; color: #155724;"><strong>Return Date:</strong> ${new Date().toLocaleDateString()}</p>
+              <p style="margin: 5px 0; color: #155724;"><strong>Condition:</strong> ${inspectionData.condition || 'Good'}</p>
+              ${inspectionData.damage_level ? `<p style="margin: 5px 0; color: #155724;"><strong>Damage Level:</strong> ${inspectionData.damage_level}/10</p>` : ''}
+            </div>
+            
+            ${damageCharge > 0 ? `
+            <div style="background: #fff3cd; padding: 20px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid #ffc107;">
+              <h3 style="color: #856404; margin: 0 0 15px 0;">⚠️ Damage Assessment</h3>
+              <p style="margin: 5px 0; color: #856404;"><strong>Damage Charge:</strong> £${damageCharge}</p>
+              <p style="margin: 5px 0; color: #856404;"><strong>Notes:</strong> ${inspectionData.return_notes || 'Damage assessment charge applied'}</p>
+              <p style="margin: 10px 0 0 0; color: #856404; font-size: 12px;">This amount has been deducted from your security deposit.</p>
+            </div>
+            ` : `
+            <div style="background: #d4edda; padding: 20px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid #28a745;">
+              <h3 style="color: #155724; margin: 0 0 15px 0;">✅ No Damage Detected</h3>
+              <p style="margin: 5px 0; color: #155724;">Your security deposit will be fully refunded.</p>
+            </div>
+            `}
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${baseUrl}/bookings" style="background: #28a745; color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; font-weight: bold; display: inline-block;">
+                View Booking Details
+              </a>
+            </div>
+            
+            <div style="background: #e9ecef; padding: 15px; border-radius: 8px;">
+              <p style="margin: 0; font-size: 14px; color: #6c757d;">
+                <strong>What's Next?</strong><br>
+                • Your rental is now complete<br>
+                • Security deposit refund will be processed within 3-5 business days<br>
+                • Thank you for choosing our car rental service<br>
+                • We hope to serve you again soon!
+              </p>
+            </div>
+            
+            <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #dee2e6;">
+              <p style="font-size: 12px; color: #6c757d; margin: 0;">
+                This email was sent from Car Rental System. If you have any questions, please contact our support team.<br>
+                <em style="color: #dc3545;">Note: Car Rental System is currently using a rented domain for demo purposes.</em>
+              </p>
+            </div>
+          </div>
+        </div>
+      `
+    });
+
+    if (error) throw error;
+    return { success: true };
+  } catch (error) {
+    console.error('Return inspection email error:', error);
+    throw new Error('Failed to send return inspection email');
+  }
+};
+
 module.exports = {
   sendBookingConfirmationEmail,
   sendBookingApprovedEmail,
   sendBookingActiveEmail,
-  sendBookingCancelledEmail
+  sendBookingCancelledEmail,
+  sendReturnInspectionEmail
 };
