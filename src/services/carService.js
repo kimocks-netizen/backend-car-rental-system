@@ -43,8 +43,34 @@ const carService = {
       throw new Error(error.message);
     }
 
+    // Get active bookings for these cars to calculate real-time availability
+    const carIds = cars.map(car => car.id);
+    const { data: bookings, error: bookingsError } = await supabase
+      .from('bookings')
+      .select('car_id')
+      .in('car_id', carIds)
+      .in('status', ['pending', 'confirmed', 'active']);
+    
+    if (bookingsError) {
+      console.error('Error fetching bookings for availability calculation:', bookingsError);
+    }
+    
+    // Calculate real-time availability for each car
+    const carsWithAvailability = cars.map(car => {
+      const carBookings = bookings ? bookings.filter(booking => booking.car_id === car.id) : [];
+      const totalQuantity = car.total_quantity || 1;
+      const bookedCount = carBookings.length;
+      const availableQuantity = Math.max(0, totalQuantity - bookedCount);
+      
+      return {
+        ...car,
+        available_quantity: availableQuantity,
+        total_quantity: totalQuantity
+      };
+    });
+
     return {
-      cars: cars || [],
+      cars: carsWithAvailability || [],
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
@@ -258,9 +284,9 @@ const carService = {
       throw new Error(bookingsError.message);
     }
     
-    // Calculate availability for each car
+    // Calculate real-time availability for each car
     const carsWithAvailability = cars.map(car => {
-      const carBookings = bookings.filter(booking => booking.car_id === car.id);
+      const carBookings = bookings ? bookings.filter(booking => booking.car_id === car.id) : [];
       const totalQuantity = car.total_quantity || 1;
       const bookedCount = carBookings.length;
       const availableQuantity = Math.max(0, totalQuantity - bookedCount);
