@@ -60,7 +60,7 @@ const adminController = {
 
   async getAllUsers(req, res) {
     try {
-      const { page = 1, limit = 10, role, status } = req.query;
+      const { page = 1, limit = 10, role, status, search, sortField = 'created_at', sortDirection = 'desc' } = req.query;
       const offset = (page - 1) * limit;
       
       let query = supabase
@@ -75,8 +75,13 @@ const adminController = {
         query = query.eq('user_status', status);
       }
       
+      if (search) {
+        query = query.or(`full_name.ilike.%${search}%,email.ilike.%${search}%`);
+      }
+      
+      const ascending = sortDirection === 'asc';
       const { data: users, error, count } = await query
-        .order('created_at', { ascending: false })
+        .order(sortField, { ascending })
         .range(offset, offset + limit - 1);
       
       if (error) {
@@ -363,6 +368,39 @@ const adminController = {
       }
       
       res.json({ success: true, data });
+    } catch (error) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  },
+
+  async deleteUser(req, res) {
+    try {
+      // First check if user exists and is not an admin
+      const { data: user, error: fetchError } = await supabase
+        .from('profiles')
+        .select('id, user_role')
+        .eq('id', req.params.id)
+        .single();
+      
+      if (fetchError || !user) {
+        return res.status(404).json({ success: false, message: 'User not found' });
+      }
+      
+      if (user.user_role === 'admin') {
+        return res.status(403).json({ success: false, message: 'Cannot delete admin users' });
+      }
+      
+      // Delete the user
+      const { error: deleteError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', req.params.id);
+      
+      if (deleteError) {
+        throw new Error(deleteError.message);
+      }
+      
+      res.json({ success: true, message: 'User deleted successfully' });
     } catch (error) {
       res.status(500).json({ success: false, message: error.message });
     }

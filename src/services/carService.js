@@ -1,10 +1,14 @@
 const { supabase, uploadCarImage, getPublicUrl } = require('../utils/database');
 
 const carService = {
-  async getAllCars({ page = 1, limit = 10, type, fuel_type, availability_status }) {
+  async getAllCars({ page = 1, limit = 10, type, fuel_type, availability_status, transmission, min_rate, max_rate, search, sortField = 'created_at', sortDirection = 'desc' }) {
     const offset = (page - 1) * limit;
     
     let query = supabase.from('cars').select('*', { count: 'exact' });
+    
+    if (search) {
+      query = query.or(`brand.ilike.%${search}%,model.ilike.%${search}%`);
+    }
     
     if (type) {
       query = query.eq('type', type);
@@ -18,16 +22,55 @@ const carService = {
       query = query.eq('availability_status', availability_status);
     }
     
+    if (transmission) {
+      query = query.eq('transmission', transmission);
+    }
+    
+    if (min_rate) {
+      query = query.gte('daily_rate', min_rate);
+    }
+    
+    if (max_rate) {
+      query = query.lte('daily_rate', max_rate);
+    }
+    
+    const ascending = sortDirection === 'asc';
     const { data: cars, error, count } = await query
-      .order('created_at', { ascending: false })
+      .order(sortField, { ascending })
       .range(offset, offset + limit - 1);
     
     if (error) {
       throw new Error(error.message);
     }
 
+    // Get active bookings for these cars to calculate real-time availability
+    const carIds = cars.map(car => car.id);
+    const { data: bookings, error: bookingsError } = await supabase
+      .from('bookings')
+      .select('car_id')
+      .in('car_id', carIds)
+      .in('status', ['pending', 'confirmed', 'active']);
+    
+    if (bookingsError) {
+      console.error('Error fetching bookings for availability calculation:', bookingsError);
+    }
+    
+    // Calculate real-time availability for each car
+    const carsWithAvailability = cars.map(car => {
+      const carBookings = bookings ? bookings.filter(booking => booking.car_id === car.id) : [];
+      const totalQuantity = car.total_quantity || 1;
+      const bookedCount = carBookings.length;
+      const availableQuantity = Math.max(0, totalQuantity - bookedCount);
+      
+      return {
+        ...car,
+        available_quantity: availableQuantity,
+        total_quantity: totalQuantity
+      };
+    });
+
     return {
-      cars: cars || [],
+      cars: carsWithAvailability || [],
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
@@ -191,30 +234,59 @@ const carService = {
     return !conflicts || conflicts.length === 0;
   },
 
-  async getAvailableCars() {
-    // Get all cars
-    const { data: cars, error: carsError } = await supabase
-      .from('cars')
-      .select('*')
-      .order('daily_rate', { ascending: true });
+  async getAvailableCars({ page = 1, limit = 10, type, fuel_type, transmission, min_rate, max_rate, q } = {}) {
+    const offset = (page - 1) * limit;
+    
+    // Build query with filters
+    let query = supabase.from('cars').select('*', { count: 'exact' });
+    
+    if (q) {
+      query = query.or(`brand.ilike.%${q}%,model.ilike.%${q}%`);
+    }
+    
+    if (type) {
+      query = query.eq('type', type);
+    }
+    
+    if (fuel_type) {
+      query = query.eq('fuel_type', fuel_type);
+    }
+    
+    if (transmission) {
+      query = query.eq('transmission', transmission);
+    }
+    
+    if (min_rate) {
+      query = query.gte('daily_rate', min_rate);
+    }
+    
+    if (max_rate) {
+      query = query.lte('daily_rate', max_rate);
+    }
+    
+    const { data: cars, error: carsError, count } = await query
+      .order('daily_rate', { ascending: true })
+      .range(offset, offset + limit - 1);
     
     if (carsError) {
       throw new Error(carsError.message);
     }
     
-    // Get active bookings
+    // Get active bookings for these cars
+    const carIds = cars.map(car => car.id);
     const { data: bookings, error: bookingsError } = await supabase
       .from('bookings')
       .select('car_id')
+      .in('car_id', carIds)
       .in('status', ['pending', 'confirmed', 'active']);
     
     if (bookingsError) {
       throw new Error(bookingsError.message);
     }
     
-    // Calculate availability for each car
+    // Calculate real-time availability for each car
     const carsWithAvailability = cars.map(car => {
-      const carBookings = bookings.filter(booking => booking.car_id === car.id);
+      const carBookings = bookings ? bookings.filter(booking => booking.car_id === car.id) : [];
       const totalQuantity = car.total_quantity || 1;
       const bookedCount = carBookings.length;
       const availableQuantity = Math.max(0, totalQuantity - bookedCount);
@@ -226,8 +298,15 @@ const carService = {
       };
     });
     
-    // Return all cars (including sold out ones for display)
-    return carsWithAvailability;
+    return {
+      cars: carsWithAvailability,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total: count || 0,
+        pages: Math.ceil((count || 0) / limit)
+      }
+    };
   }
 };
 

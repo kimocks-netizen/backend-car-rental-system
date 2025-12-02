@@ -2,6 +2,7 @@ CREATE TABLE profiles (
   id UUID REFERENCES auth.users PRIMARY KEY,
   full_name TEXT NOT NULL,
   email TEXT UNIQUE NOT NULL,
+  alternative_emails TEXT,
   phone TEXT,
   cust_address TEXT,
   license_number TEXT,

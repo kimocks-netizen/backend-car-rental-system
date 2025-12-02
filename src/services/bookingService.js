@@ -66,8 +66,28 @@ const bookingService = {
   },
 
   async createBooking(bookingData) {
-    const { car_id, customer_id, start_date, end_date, total_amount, pickup_location, dropoff_location } = bookingData;
+    console.log('📧 Creating booking with data:', bookingData);
+    const { car_id, customer_id, start_date, end_date, total_amount, pickup_location, dropoff_location, useAlternativeEmail, alternativeEmail } = bookingData;
     const user_id = customer_id;
+    
+    console.log('📧 Alternative email check:', { useAlternativeEmail, alternativeEmail, user_id });
+    
+    // Update user's alternative email if provided
+    if (useAlternativeEmail && alternativeEmail) {
+      console.log('📧 Updating alternative email for user:', user_id, 'with email:', alternativeEmail);
+      const { data: updateResult, error: updateError } = await supabase
+        .from('profiles')
+        .update({ alternative_emails: alternativeEmail })
+        .eq('id', user_id);
+      
+      if (updateError) {
+        console.error('❌ Failed to update alternative email:', updateError);
+      } else {
+        console.log('✅ Alternative email updated successfully:', updateResult);
+      }
+    } else {
+      console.log('📧 No alternative email to update');
+    }
     
     // Check car availability
     const { data: car } = await supabase
@@ -208,6 +228,35 @@ const bookingService = {
     }
     
     return data;
+  },
+
+  async getCarById(carId) {
+    const { data, error } = await supabase
+      .from('cars')
+      .select('*')
+      .eq('id', carId)
+      .single();
+    
+    if (error) {
+      throw new Error(error.message);
+    }
+    
+    return data;
+  },
+
+  async getUserEmail(userId) {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('email, alternative_emails')
+      .eq('id', userId)
+      .single();
+    
+    if (error) {
+      throw new Error(error.message);
+    }
+    
+    // Return alternative email if available, otherwise return primary email
+    return data.alternative_emails || data.email;
   }
 };
 

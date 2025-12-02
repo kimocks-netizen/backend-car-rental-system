@@ -138,7 +138,7 @@ exports.getProfile = async (req, res) => {
   try {
     const { data: profile, error } = await supabase
       .from('profiles')
-      .select('id, email, full_name, phone, user_role, created_at')
+      .select('id, email, full_name, phone, cust_address, license_number, user_role, created_at')
       .eq('id', req.user.id)
       .single();
 
@@ -155,12 +155,12 @@ exports.getProfile = async (req, res) => {
 
 // Update user profile
 exports.updateProfile = async (req, res) => {
-  const { full_name, phone } = req.body;
+  const { full_name, phone, cust_address, license_number } = req.body;
 
   try {
     const { data: profile, error } = await supabase
       .from('profiles')
-      .update({ full_name, phone, updated_at: new Date() })
+      .update({ full_name, phone, cust_address, license_number, updated_at: new Date() })
       .eq('id', req.user.id)
       .select('*')
       .single();
@@ -174,6 +174,8 @@ exports.updateProfile = async (req, res) => {
       email: profile.email,
       full_name: profile.full_name,
       phone: profile.phone,
+      cust_address: profile.cust_address,
+      license_number: profile.license_number,
       role: profile.user_role
     }, 'Profile updated successfully');
 
@@ -186,4 +188,88 @@ exports.updateProfile = async (req, res) => {
 // Logout (client-side token removal)
 exports.logout = async (req, res) => {
   return ApiResponse.success(res, null, 'Logout successful');
+};
+
+// Change password
+exports.changePassword = async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+
+  try {
+    // Verify current password with Supabase Auth
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('email')
+      .eq('id', req.user.id)
+      .single();
+
+    if (!profile) {
+      return ApiResponse.error(res, 'User not found', 404);
+    }
+
+    // Verify current password
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: profile.email,
+      password: currentPassword
+    });
+
+    if (signInError) {
+      return ApiResponse.error(res, 'Current password is incorrect', 400);
+    }
+
+    // Update password in Supabase Auth
+    const { error: updateError } = await supabase.auth.admin.updateUserById(
+      req.user.id,
+      { password: newPassword }
+    );
+
+    if (updateError) {
+      return ApiResponse.error(res, 'Failed to update password', 400);
+    }
+
+    return ApiResponse.success(res, null, 'Password changed successfully');
+  } catch (error) {
+    console.error('Change password error:', error);
+    return ApiResponse.error(res, 'Internal server error');
+  }
+};
+
+// Delete account
+exports.deleteAccount = async (req, res) => {
+  try {
+    // Check for active bookings
+    const { data: activeBookings } = await supabase
+      .from('bookings')
+      .select('id')
+      .eq('user_id', req.user.id)
+      .in('status', ['pending', 'confirmed', 'active']);
+
+    if (activeBookings && activeBookings.length > 0) {
+      return ApiResponse.error(res, 'Cannot delete account with active bookings', 400);
+    }
+
+    // Delete profile first (due to foreign key constraint)
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .delete()
+      .eq('id', req.user.id);
+
+    if (profileError) {
+      return ApiResponse.error(res, 'Failed to delete profile', 400);
+    }
+
+    // Delete user from Supabase Auth
+    const { error: authError } = await supabase.auth.admin.deleteUser(
+      req.user.id
+    );
+
+    if (authError) {
+      console.error('Auth deletion error:', authError);
+      // Profile is already deleted, so we'll consider this a success
+    }
+
+    return ApiResponse.success(res, null, 'Account deleted successfully');
+  } catch (error) {
+    console.error('Delete account error:', error);
+    return ApiResponse.error(res, 'Internal server error');
+  }
 };
