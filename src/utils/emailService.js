@@ -1,6 +1,10 @@
 const { Resend } = require('resend');
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Initialize Resend only if API key is provided
+let resend = null;
+if (process.env.RESEND_API_KEY && process.env.RESEND_API_KEY !== 'your_resend_api_key_here') {
+  resend = new Resend(process.env.RESEND_API_KEY);
+}
 
 const getBaseUrl = () => {
   return process.env.NODE_ENV === 'production' 
@@ -11,6 +15,13 @@ const getBaseUrl = () => {
 const sendBookingConfirmationEmail = async (email, bookingData, carData) => {
   try {
     console.log('📧 sendBookingConfirmationEmail called with:', { email, bookingId: bookingData?.id, carId: carData?.id });
+    
+    // Skip email if Resend is not configured
+    if (!resend) {
+      console.log('⚠️ Resend not configured, skipping email');
+      return { success: true, message: 'Email service not configured' };
+    }
+    
     const baseUrl = getBaseUrl();
     
     const { data, error } = await resend.emails.send({
@@ -84,6 +95,10 @@ const sendBookingConfirmationEmail = async (email, bookingData, carData) => {
 
 const sendBookingApprovedEmail = async (email, bookingData, carData) => {
   try {
+    if (!resend) {
+      console.log('⚠️ Resend not configured, skipping email');
+      return { success: true, message: 'Email service not configured' };
+    }
     const baseUrl = getBaseUrl();
     
     const { data, error } = await resend.emails.send({
@@ -144,6 +159,10 @@ const sendBookingApprovedEmail = async (email, bookingData, carData) => {
 
 const sendBookingActiveEmail = async (email, bookingData, carData) => {
   try {
+    if (!resend) {
+      console.log('⚠️ Resend not configured, skipping email');
+      return { success: true, message: 'Email service not configured' };
+    }
     const baseUrl = getBaseUrl();
     
     const { data, error } = await resend.emails.send({
@@ -196,6 +215,10 @@ const sendBookingActiveEmail = async (email, bookingData, carData) => {
 
 const sendBookingCancelledEmail = async (email, bookingData, carData, reason = '') => {
   try {
+    if (!resend) {
+      console.log('⚠️ Resend not configured, skipping email');
+      return { success: true, message: 'Email service not configured' };
+    }
     const { data, error } = await resend.emails.send({
       from: 'noreply@carogroupinvestments.com',
       to: email,
@@ -243,6 +266,10 @@ const sendBookingCancelledEmail = async (email, bookingData, carData, reason = '
 
 const sendReturnInspectionEmail = async (email, bookingData, carData, inspectionData) => {
   try {
+    if (!resend) {
+      console.log('⚠️ Resend not configured, skipping email');
+      return { success: true, message: 'Email service not configured' };
+    }
     const baseUrl = getBaseUrl();
     const damageCharge = inspectionData.damage_charge || 0;
     

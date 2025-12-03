@@ -133,7 +133,21 @@ process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`Car Rental API Server running on port ${PORT}`);
   console.log(`Health check: /health`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`Resend configured: ${process.env.RESEND_API_KEY ? 'Yes' : 'No'}`);
+});
+
+server.on('error', (err) => {
+  console.error('Server error:', err);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down gracefully');
+  server.close(() => {
+    console.log('Process terminated');
+  });
 });
